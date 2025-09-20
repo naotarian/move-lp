@@ -1,78 +1,74 @@
 'use server'
 
+import { redirect } from 'next/navigation'
 import { EstimateFormData } from '@/types/estimate'
 
 // 見積もりフォームデータの送信処理
 export async function submitEstimateForm(formData: EstimateFormData) {
+  // バリデーション
+  console.log(formData)
+  const validationResult = validateEstimateForm(formData)
+  console.log(validationResult)
+  if (!validationResult.isValid) {
+    return {
+      success: false,
+      error: 'バリデーションエラー',
+      details: validationResult.errors,
+    }
+  }
+
+  // データの前処理
+  const processedData = processEstimateData(formData)
+
+  // 実際のAPI呼び出し
+  console.log('送信データ:', processedData)
+
+  let apiResult = null
+  let apiError = null
+
   try {
-    // バリデーション
-    console.log(formData)
-    const validationResult = validateEstimateForm(formData)
-    console.log(validationResult)
-    if (!validationResult.isValid) {
-      return {
-        success: false,
-        error: 'バリデーションエラー',
-        details: validationResult.errors,
-      }
+    // APIエンドポイントに送信
+    const response = await fetch(`${process.env.API_BASE_URL!}/api/estimate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(processedData),
+    })
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`)
     }
 
-    // データの前処理
-    const processedData = processEstimateData(formData)
-
-    // 実際のAPI呼び出し
-    console.log('送信データ:', processedData)
-
-    try {
-      // APIエンドポイントに送信
-      const response = await fetch(`${process.env.API_BASE_URL!}/api/estimate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // 必要に応じて認証ヘッダーを追加
-          // 'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(processedData),
-      })
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`)
-      }
-
-      const result = await response.json()
-      console.log('API Response:', result)
-
-      return {
-        success: true,
-        message: '見積もり依頼を受け付けました。複数の業者から見積もりが届きます。',
-        estimateId: result.data?.id || `EST-${Date.now()}`,
-        data: result,
-        redirectTo: result.success && result.data?.id ? `/estimate/thanks?id=${result.data.id}` : null,
-      }
-    } catch (apiError) {
-      console.error('API呼び出しエラー:', apiError)
-
-      // APIエラーの場合は、フォールバック処理として成功レスポンスを返す
-      // （開発中はAPIが未実装の可能性があるため）
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('開発環境: APIエラーのためフォールバック処理を実行')
-        return {
-          success: true,
-          message: '見積もり依頼を受け付けました。複数の業者から見積もりが届きます。',
-          estimateId: `EST-${Date.now()}`,
-          warning: 'APIが未実装のため、フォールバック処理で処理されました。',
-        }
-      }
-
-      throw apiError
-    }
+    apiResult = await response.json()
+    console.log('API Response:', apiResult)
   } catch (error) {
     console.error('見積もり送信エラー:', error)
+    apiError = error
+  }
+
+  // API成功時は直接thanksページにリダイレクト
+  if (apiResult?.success && apiResult.data?.estimate?.id) {
+    redirect(`/estimate/thanks?id=${apiResult.data.estimate.id}`)
+  }
+
+  // APIエラーの場合
+  if (apiError) {
+    // 開発環境ではフォールバック処理
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('開発環境: APIエラーのためフォールバック処理を実行')
+      const fallbackEstimateId = `EST-${Date.now()}`
+      redirect(`/estimate/thanks?id=${fallbackEstimateId}`)
+    }
+
     return {
       success: false,
       error: 'サーバーエラーが発生しました。しばらく時間をおいて再度お試しください。',
     }
   }
+
+  // リダイレクトが実行されなかった場合のフォールバック
+  redirect('/estimate/thanks')
 }
 
 // フォームデータのバリデーション

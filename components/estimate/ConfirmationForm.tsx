@@ -61,33 +61,19 @@ const ConfirmationForm: React.FC<ConfirmationFormProps> = ({ formData }) => {
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      // Server Actionの呼び出し
-      const result = await submitEstimateForm(formData)
+      // Server Actionの呼び出し（成功時は自動的にリダイレクトされる）
+      await submitEstimateForm(formData)
 
-      if (result.success) {
-        // セッションストレージをクリア
-        sessionStorage.removeItem('estimateFormData')
+      // この行に到達した場合は何らかのエラー（リダイレクトが失敗）
+      console.warn('Server Actionが完了しましたが、リダイレクトされませんでした')
 
-        // リダイレクト先がある場合は遷移（loadingは解除しない）
-        if (result.redirectTo) {
-          window.location.href = result.redirectTo
-          return // リダイレクト時はloadingを解除しない
-        } else {
-          // リダイレクト先がない場合は成功メッセージを表示
-          alert(result.message)
-          setIsSubmitting(false)
-        }
-      } else {
-        // エラー時の処理
-        alert(result.error || '送信に失敗しました')
-        if (result.details) {
-          console.error('バリデーションエラー:', result.details)
-        }
-        setIsSubmitting(false)
-      }
+      // セッションストレージをクリア
+      sessionStorage.removeItem('estimateFormData')
+
+      // 手動でthanksページに遷移（フォールバック）
+      window.location.href = '/estimate/thanks'
     } catch (error) {
       console.error('送信エラー:', error)
-      alert('送信中にエラーが発生しました。再度お試しください。')
       setIsSubmitting(false)
     }
   }
