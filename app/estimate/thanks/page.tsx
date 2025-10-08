@@ -70,12 +70,6 @@ export default function ThanksPage() {
           {/* タイトル */}
           <h1 className="text-3xl font-bold text-gray-900 mb-4">見積もり依頼を受け付けました</h1>
 
-          {/* メッセージ */}
-          <div className="space-y-4 text-gray-600">
-            <p className="text-lg">見積もり依頼を受け付けました！</p>
-            {estimateId && <p className="text-sm font-mono bg-gray-100 px-3 py-2 rounded">依頼ID: {estimateId}</p>}
-          </div>
-
           {/* メール認証案内 */}
           <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
             <div className="flex items-start">
@@ -159,22 +153,6 @@ export default function ThanksPage() {
                 選んだ業者と直接やり取りして、引越しの詳細を決定
               </li>
             </ol>
-          </div>
-
-          {/* アクションボタン */}
-          <div className="mt-8">
-            <Link
-              href="/"
-              className="w-full flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[#003672] hover:bg-[#5c6f8b] transition-colors duration-200"
-            >
-              <Home className="w-5 h-5 mr-2" />
-              ホームに戻る
-            </Link>
-          </div>
-
-          {/* 注意事項 */}
-          <div className="mt-8 text-xs text-gray-500">
-            <p>※ 見積もり依頼に関するお問い合わせは、お電話またはメールでお願いいたします。</p>
           </div>
         </div>
       </div>
